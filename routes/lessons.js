@@ -4,8 +4,7 @@ const router = express.Router();
 
 // Allowed fields for updates for PUT /lessons/:id
 const allowedUpdates = [
-  'students',
-  'spaces',
+  'sessionsBooked',
   'discounted',
   'discountPercent',
   'discountStart',
