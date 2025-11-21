@@ -1,5 +1,5 @@
 // server.js
-// Backend entry: connects to MongoDB Atlas, exposes db via middleware, and defines routes.
+// Backend entry: connects to MongoDB Atlas, exposes db via middleware, and mounts routes.
 
 const express = require('express');
 const cors = require('cors');
@@ -9,6 +9,9 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // Custom logger middleware
 const loggerMiddleware = require('./middleware/logger');
+
+// Import lessons router
+const lessonsRouter = require('./routes/lessons');
 
 const app = express();
 
@@ -24,80 +27,40 @@ app.use(loggerMiddleware);
 const propertiesPath = path.resolve(__dirname, './dbconnection.properties');
 const properties = PropertiesReader(propertiesPath);
 
-// Database config pieces
-const dbPrefix = properties.get('db.prefix');       // e.g., "mongodb+srv://"
-const dbHost = properties.get('db.host');           // e.g., "@cluster0.xxx.mongodb.net/"
-const dbName = properties.get('db.name');           // e.g., "bookmyclass"
-const dbUser = properties.get('db.user');           // Atlas username
-const dbPassword = properties.get('db.password');   // Atlas password
-const dbParams = properties.get('db.params');       // e.g., "?retryWrites=true&w=majority"
+const dbPrefix = properties.get('db.prefix');
+const dbHost = properties.get('db.host');
+const dbName = properties.get('db.name');       // e.g., "bookmyclass"
+const dbUser = properties.get('db.user');       // Atlas username
+const dbPassword = properties.get('db.password'); // Atlas password
+const dbParams = properties.get('db.params');   // e.g., "?retryWrites=true&w=majority"
 
-// Build full MongoDB connection string step by step
-const userAndPassword = `${dbUser}:${dbPassword}`;
-const baseHost = `${dbPrefix}${userAndPassword}${dbHost}`;
-const uri = `${baseHost}${dbParams}`;
-
-// Create Mongo client
+// Build MongoDB connection string
+const uri = `${dbPrefix}${dbUser}:${dbPassword}${dbHost}${dbParams}`;
 const client = new MongoClient(uri, { serverApi: ServerApiVersion.v1 });
 
-// Will hold the connected database reference
 let db;
 
 // Initialize database and start server
 async function init() {
   try {
-    // Connect to Atlas
     await client.connect();
-
-    // Select our database by name
     db = client.db(dbName);
     console.log(`Connected to MongoDB Atlas. Database: ${db.databaseName}`);
 
-    // Expose db and ObjectId to all routes via middleware
+    // Expose db and ObjectId to all routes
     app.use((req, _res, next) => {
       req.db = db;
       req.ObjectId = ObjectId;
       next();
     });
 
-    // Health check
+    // Health check route
     app.get('/', (_req, res) => {
       res.json({ status: 'ok', database: db.databaseName });
     });
 
-    // Lessons route (inline for now; can be moved to routes/lessons.js)
-    app.get('/lessons', async (req, res, next) => {
-      try {
-        // Read sort parameters from query string
-        const sortByParam = req.query.sortBy;
-        const orderParam = req.query.order;
-
-        // Decide the sort field (default to "topic" if not provided or invalid)
-        const allowedFields = ['topic', 'location', 'price', 'space', 'id'];
-        let sortField = 'topic';
-        if (typeof sortByParam === 'string' && allowedFields.includes(sortByParam)) {
-          sortField = sortByParam;
-        }
-
-        // Decide the sort order (default to ascending)
-        let sortOrder = 1; // 1 = ascending, -1 = descending
-        if (typeof orderParam === 'string' && orderParam.toLowerCase() === 'desc') {
-          sortOrder = -1;
-        }
-
-        // Build the sort object for MongoDB
-        const sortOptions = {};
-        sortOptions[sortField] = sortOrder;
-
-        // Query lessons with sorting
-        const cursor = req.db.collection('lesson').find({});
-        const items = await cursor.sort(sortOptions).toArray();
-
-        res.json(items);
-      } catch (err) {
-        next(err);
-      }
-    });
+    // Mount lessons router
+    app.use('/lessons', lessonsRouter);
 
     // 404 handler
     app.use((req, res) => {
