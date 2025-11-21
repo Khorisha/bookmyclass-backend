@@ -10,6 +10,9 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 // Custom logger middleware
 const loggerMiddleware = require('./middleware/logger');
 
+// Static image middleware
+const staticImages = require('./middleware/staticImages');
+
 // Import lessons router
 const lessonsRouter = require('./routes/lessons');
 
@@ -22,6 +25,9 @@ app.set('json spaces', 3);
 
 // Request logging
 app.use(loggerMiddleware);
+
+// Static image serving (lesson-icons + assets)
+staticImages(app);
 
 // Read database connection info from properties file
 const propertiesPath = path.resolve(__dirname, './dbconnection.properties');
