@@ -13,8 +13,10 @@ const loggerMiddleware = require('./middleware/logger');
 // Static image middleware
 const staticImages = require('./middleware/staticImages');
 
-// Import lessons router
+// Import routers
 const lessonsRouter = require('./routes/lessons');
+const searchRouter = require('./routes/search');
+const ordersRouter = require('./routes/orders');
 
 const app = express();
 
@@ -53,6 +55,17 @@ async function init() {
     db = client.db(dbName);
     console.log(`Connected to MongoDB Atlas. Database: ${db.databaseName}`);
 
+    // Ensure text index exists for search (excluding student names)
+    await db.collection('lessons').createIndex({
+      title: "text",
+      subject: "text",
+      location: "text",
+      description: "text",
+      category: "text",
+      professor: "text"
+      // rating and price are numeric, handled via regex/numeric fallback in /search
+    });
+
     // Expose db and ObjectId to all routes
     app.use((req, _res, next) => {
       req.db = db;
@@ -65,8 +78,10 @@ async function init() {
       res.json({ status: 'ok', database: db.databaseName });
     });
 
-    // Mount lessons router
+    // Mount routers
     app.use('/lessons', lessonsRouter);
+    app.use('/search', searchRouter);
+    app.use('/orders', ordersRouter);
 
     // 404 handler
     app.use((req, res) => {
