@@ -50,4 +50,14 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+// GET /orders - return all orders (for testing)
+router.get('/', async (req, res, next) => {
+  try {
+    const orders = await req.db.collection('orders').find({}).toArray();
+    res.json(orders);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
