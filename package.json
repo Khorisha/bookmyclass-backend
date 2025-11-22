@@ -1,14 +1,15 @@
 {
-  "name": "backend",
+  "name": "bookmyclass-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend for my BookMyClass project",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node render-server.js",
     "dev": "nodemon server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "local": "node server.js",
+    "test": "echo \"No tests yet\" && exit 1"
   },
-  "author": "",
+  "author": "Khorisha",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",

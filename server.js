@@ -55,7 +55,7 @@ async function init() {
     db = client.db(dbName);
     console.log(`Connected to MongoDB Atlas. Database: ${db.databaseName}`);
 
-    // Ensure text index exists for search (excluding student names)
+    // Ensure text index exists for search 
     await db.collection('lessons').createIndex({
       title: "text",
       subject: "text",
@@ -63,7 +63,6 @@ async function init() {
       description: "text",
       category: "text",
       professor: "text"
-      // rating and price are numeric, handled via regex/numeric fallback in /search
     });
 
     // Expose db and ObjectId to all routes
