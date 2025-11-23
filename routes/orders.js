@@ -17,7 +17,7 @@ router.post('/', async (req, res, next) => {
 
     // Build order document
     const newOrder = {
-      receiptId: receiptId,
+      orderId: receiptId,  
       customer: {
         parentName: customer.parentName,
         phoneNumber: customer.phoneNumber
