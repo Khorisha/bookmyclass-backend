@@ -37,10 +37,10 @@ const properties = PropertiesReader(propertiesPath);
 
 const dbPrefix = properties.get('db.prefix');
 const dbHost = properties.get('db.host');
-const dbName = properties.get('db.name');       // e.g., "bookmyclass"
-const dbUser = properties.get('db.user');       // Atlas username
-const dbPassword = properties.get('db.password'); // Atlas password
-const dbParams = properties.get('db.params');   // e.g., "?retryWrites=true&w=majority"
+const dbName = properties.get('db.name');       
+const dbUser = properties.get('db.user');       
+const dbPassword = properties.get('db.password'); 
+const dbParams = properties.get('db.params');  
 
 // Build MongoDB connection string
 const uri = `${dbPrefix}${dbUser}:${dbPassword}${dbHost}${dbParams}`;

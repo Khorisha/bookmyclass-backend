@@ -30,7 +30,7 @@ async function connectToDatabase() {
   try {
     let connectionString;
     
-    // Check if we're on Render (they give us the connection string)
+    // Check if we're on Render 
     if (process.env.MONGODB_URI) {
       connectionString = process.env.MONGODB_URI;
       console.log('Using database connection from Render environment');
