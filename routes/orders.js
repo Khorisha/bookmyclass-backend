@@ -5,10 +5,10 @@ const router = express.Router();
 // POST /orders - create a new order
 router.post('/', async (req, res, next) => {
   try {
-    const { customer, orderItems } = req.body;
+    const { customer, orderItems, receiptId } = req.body;
 
     // Basic validation
-    if (!customer || !orderItems || orderItems.length === 0) {
+    if (!customer || !orderItems || orderItems.length === 0 || !receiptId) {
       return res.status(400).json({ error: 'Invalid order data' });
     }
 
@@ -17,6 +17,7 @@ router.post('/', async (req, res, next) => {
 
     // Build order document
     const newOrder = {
+      receiptId: receiptId,
       customer: {
         parentName: customer.parentName,
         phoneNumber: customer.phoneNumber
@@ -42,7 +43,7 @@ router.post('/', async (req, res, next) => {
     // Respond with confirmation
     res.json({
       message: 'Order created successfully',
-      orderId: result.insertedId,
+      orderId: receiptId,
       order: newOrder
     });
   } catch (err) {
