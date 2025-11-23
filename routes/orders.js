@@ -7,21 +7,21 @@ router.post('/', async (req, res, next) => {
   try {
     const { customer, orderItems, receiptId } = req.body;
 
-    // Basic validation
-    if (!customer || !orderItems || orderItems.length === 0 || !receiptId) {
+    // Validate required fields
+    if (!receiptId || !customer || !orderItems || orderItems.length === 0) {
       return res.status(400).json({ error: 'Invalid order data' });
     }
 
-    // Calculate total spaces and total amount
-    const totalSpaces = orderItems.reduce((sum, item) => sum + item.spaces, 0);
-    const totalAmount = orderItems.reduce((sum, item) => sum + (item.priceAtBooking * item.spaces), 0);
+    // Calculate totals
+    const totalSpaces = orderItems.reduce((sum, item) => sum + (item.spaces || 0), 0);
+    const totalAmount = orderItems.reduce((sum, item) => sum + ((item.priceAtBooking || 0) * (item.spaces || 0)), 0);
 
-    // Build order document 
+    // Build order document
     const newOrder = {
-      receiptId: receiptId, 
+      receiptId: String(receiptId),
       customer: {
-        parentName: customer.parentName,
-        phoneNumber: customer.phoneNumber
+        parentName: customer.parentName || '',
+        phoneNumber: customer.phoneNumber || ''
       },
       orderItems: orderItems.map(item => ({
         lessonID: item.lessonID,
@@ -29,9 +29,9 @@ router.post('/', async (req, res, next) => {
         spaces: item.spaces,
         priceAtBooking: item.priceAtBooking,
         childInfo: {
-          name: item.childInfo.name,
-          age: item.childInfo.age,
-          selectedDay: item.childInfo.selectedDay,
+          name: item.childInfo?.name || '',
+          age: item.childInfo?.age || '',
+          selectedDay: item.childInfo?.selectedDay || '',
         }
       })),
       totalSpaces,
@@ -40,24 +40,17 @@ router.post('/', async (req, res, next) => {
       createdAt: new Date().toISOString()
     };
 
-    console.log('Saving order to database:', newOrder); // Debug log
-
-    // Save to "orders" collection
+    // Save to database
     const result = await req.db.collection('orders').insertOne(newOrder);
-
-    console.log('MongoDB insert result:', result); // Debug log
-
-    // Verify the saved document
     const savedOrder = await req.db.collection('orders').findOne({ _id: result.insertedId });
-    console.log('Saved order from database:', savedOrder); // Debug log
 
-    // Respond with confirmation
+    // Return response
     res.json({
+      success: true,
       message: 'Order created successfully',
-      orderId: receiptId,
-      receiptId: receiptId,
-      order: newOrder,
-      savedToDatabase: savedOrder // Include for debugging
+      receiptId: savedOrder.receiptId,
+      orderId: savedOrder.receiptId,
+      order: savedOrder
     });
   } catch (err) {
     console.error('Error creating order:', err);
@@ -65,13 +58,30 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// GET /orders - return all orders (for testing)
+// GET /orders - return all orders
 router.get('/', async (req, res, next) => {
   try {
     const orders = await req.db.collection('orders').find({}).toArray();
-    console.log('All orders from database:', orders); // Debug log
     res.json(orders);
   } catch (err) {
+    console.error('Error fetching orders:', err);
+    next(err);
+  }
+});
+
+// GET /orders/:receiptId - get order by receiptId
+router.get('/:receiptId', async (req, res, next) => {
+  try {
+    const { receiptId } = req.params;
+    const order = await req.db.collection('orders').findOne({ receiptId: String(receiptId) });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    res.json(order);
+  } catch (err) {
+    console.error('Error fetching order:', err);
     next(err);
   }
 });
