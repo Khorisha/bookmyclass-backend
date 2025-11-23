@@ -16,10 +16,9 @@ router.post('/', async (req, res, next) => {
     const totalSpaces = orderItems.reduce((sum, item) => sum + item.spaces, 0);
     const totalAmount = orderItems.reduce((sum, item) => sum + (item.priceAtBooking * item.spaces), 0);
 
-    // Build order document - FIXED: Ensure all fields are properly included
+    // Build order document 
     const newOrder = {
-      orderId: receiptId,  // This should be stored as orderId
-      receiptId: receiptId, // Also store as receiptId for consistency
+      receiptId: receiptId, 
       customer: {
         parentName: customer.parentName,
         phoneNumber: customer.phoneNumber
