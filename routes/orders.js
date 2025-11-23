@@ -5,10 +5,10 @@ const router = express.Router();
 // POST /orders - create a new order
 router.post('/', async (req, res, next) => {
   try {
-    const { customer, orderItems, receiptId } = req.body;
+    const { customer, orderItems } = req.body;
 
     // Validate required fields
-    if (!receiptId || !customer || !orderItems || orderItems.length === 0) {
+    if (!customer || !orderItems || orderItems.length === 0) {
       return res.status(400).json({ error: 'Invalid order data' });
     }
 
@@ -18,7 +18,6 @@ router.post('/', async (req, res, next) => {
 
     // Build order document
     const newOrder = {
-      receiptId: String(receiptId),
       customer: {
         parentName: customer.parentName || '',
         phoneNumber: customer.phoneNumber || ''
@@ -44,12 +43,11 @@ router.post('/', async (req, res, next) => {
     const result = await req.db.collection('orders').insertOne(newOrder);
     const savedOrder = await req.db.collection('orders').findOne({ _id: result.insertedId });
 
-    // Return response
+    // Return response with MongoDB _id as orderId
     res.json({
       success: true,
       message: 'Order created successfully',
-      receiptId: savedOrder.receiptId,
-      orderId: savedOrder.receiptId,
+      orderId: savedOrder._id, // Use MongoDB _id as orderId
       order: savedOrder
     });
   } catch (err) {
@@ -69,11 +67,11 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// GET /orders/:receiptId - get order by receiptId
-router.get('/:receiptId', async (req, res, next) => {
+// GET /orders/:id - get order by MongoDB _id
+router.get('/:id', async (req, res, next) => {
   try {
-    const { receiptId } = req.params;
-    const order = await req.db.collection('orders').findOne({ receiptId: String(receiptId) });
+    const { ObjectId } = require('mongodb');
+    const order = await req.db.collection('orders').findOne({ _id: new ObjectId(req.params.id) });
     
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
