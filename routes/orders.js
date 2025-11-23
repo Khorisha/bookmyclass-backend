@@ -1,14 +1,26 @@
 const express = require('express');
 const router = express.Router();
+const { ObjectId } = require('mongodb');
 
 // POST /orders - create a new order
 router.post('/', async (req, res, next) => {
   try {
     const { customer, orderItems } = req.body;
 
-    // Validate required fields
-    if (!customer || !orderItems || orderItems.length === 0) {
-      return res.status(400).json({ error: 'Invalid order data' });
+    // Validate customer info
+    if (!customer || !customer.parentName || !customer.phoneNumber) {
+      return res.status(400).json({ error: 'Customer name and phone are required' });
+    }
+
+    // Validate phone number (only digits)
+    const phoneRegex = /^\d+$/;
+    if (!phoneRegex.test(customer.phoneNumber)) {
+      return res.status(400).json({ error: 'Phone number must contain only digits' });
+    }
+
+    // Validate order items
+    if (!orderItems || orderItems.length === 0) {
+      return res.status(400).json({ error: 'Order must contain at least one item' });
     }
 
     // Calculate totals
@@ -18,8 +30,8 @@ router.post('/', async (req, res, next) => {
     // Build order document
     const newOrder = {
       customer: {
-        parentName: customer.parentName || '',
-        phoneNumber: customer.phoneNumber || ''
+        parentName: customer.parentName,
+        phoneNumber: customer.phoneNumber
       },
       orderItems: orderItems.map(item => ({
         lessonID: item.lessonID,
@@ -42,11 +54,11 @@ router.post('/', async (req, res, next) => {
     const result = await req.db.collection('orders').insertOne(newOrder);
     const savedOrder = await req.db.collection('orders').findOne({ _id: result.insertedId });
 
-    // Return response with MongoDB _id as orderId
+    // Return response
     res.json({
       success: true,
       message: 'Order created successfully',
-      orderId: savedOrder._id, // Use MongoDB _id as orderId
+      orderId: savedOrder._id,
       order: savedOrder
     });
   } catch (err) {
@@ -69,7 +81,11 @@ router.get('/', async (req, res, next) => {
 // GET /orders/:id - get order by MongoDB _id
 router.get('/:id', async (req, res, next) => {
   try {
-    const { ObjectId } = require('mongodb');
+    // Validate ObjectId format
+    if (!ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ error: 'Invalid order ID format' });
+    }
+
     const order = await req.db.collection('orders').findOne({ _id: new ObjectId(req.params.id) });
     
     if (!order) {
