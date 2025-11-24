@@ -18,4 +18,7 @@ function staticImages(app) {
   });
 }
 
+
 module.exports = staticImages;
+
+
